@@ -17,6 +17,7 @@ import { UserDecorator } from 'src/user/Decorator/User.decorator';
 import { Roles } from 'src/constants';
 import { CartService } from 'src/cart/cart.service';
 import crypto, { randomUUID } from 'node:crypto'
+import { UserLoginDto } from './dto/sign-in.dto';
 
 
 @Injectable()
@@ -28,28 +29,25 @@ export class AuthService {
     private userService: UserService,
     private cartService: CartService
   ) {}
-  async signUp({ userName, password, email, refreshToken = null }) {
-    const holderUsername = await this.userModel.findOne({ userName });
+  async signUp({ username, password, email, refreshToken = null }) {
+    const holderUsername = await this.userModel.findOne({ username });
     if (holderUsername) {
       throw new ConflictException('Tài khoản đã tồn tại!');
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
-    console.log(`hashPassword:::: ${hashPassword}`)
     const newAccount = await this.userModel.create({
-      userName,
+      username,
       password: hashPassword,
       email,
       active: true,
       role: Roles.Admin
     });
     if (newAccount) {
-      // console.log(`::::random ${randomUUID()}`)
       const publicKey = randomUUID().toString();
       const privateKey = randomUUID().toString();
 
       const tokens = await keyTokenPairs({ newAccount }, publicKey, privateKey);
-      console.log(`tokens::::${tokens}`)
 
       const keyStore = this.tokenKeyService.createKeyToken({
         idUser: newAccount._id,
@@ -59,7 +57,6 @@ export class AuthService {
       });
 
       if (!keyStore) throw new ConflictException('KeyStore not save');
-
 
       await this.cartService.newUserCartAndUpdateItem({ 
         userId: newAccount._id.toString(), product: {} })
@@ -75,9 +72,8 @@ export class AuthService {
     throw new ConflictException('Not create account');
   }
 
-  async signIn({ userName, password }) {
-    const user = await this.userService.findByUsername(userName);
-    console.log(`user:::: ${user}`)
+  async signIn({ username, password } : UserLoginDto) {
+    const user = await this.userService.findByUsername(username);
     if (!user) throw new ForbiddenException('Tài khoản không tồn tại');
 
     const checkPassword = await bcrypt.compare(password, user.password);

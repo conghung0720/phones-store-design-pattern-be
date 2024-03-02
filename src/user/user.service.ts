@@ -8,14 +8,14 @@ export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async findByUsername(
-    userName,
+    username,
     select = {
-      userName: 1,
+      username: 1,
       password: 1,
       roles: 1,
     },
   ) {
-    return await this.userModel.findOne({ userName }).select(select);
+    return await this.userModel.findOne({ username }).select(select);
   }
 
   async findByUserId(userId) {

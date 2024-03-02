@@ -31,7 +31,7 @@ export class TokenKeyService {
     }
 
 
-    const { _id, userName } = user;
+    const { _id, username } = user;
     const tokens = await keyTokenPairs(
       { user },
       keyStore.publicKey,

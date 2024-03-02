@@ -6,6 +6,7 @@ import { HEADER } from 'src/constants';
 import { AuthGuard } from '@nestjs/passport/dist';
 import { TokenKeyService } from './tokenKey.service';
 import { UserDecorator } from 'src/user/Decorator/User.decorator';
+import { UserLoginDto } from './dto/sign-in.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -20,9 +21,8 @@ export class AuthController {
     return await this.authService.signUp(userDto);
   }
 
-
   @Post('signin')
-  async signIn(@Body() userLoginDto: { userName: string; password: string }) {
+  async signIn(@Body() userLoginDto: UserLoginDto) {
     return await this.authService.signIn(userLoginDto);
   }
 

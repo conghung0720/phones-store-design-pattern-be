@@ -25,8 +25,6 @@ export class CartService {
       },
       options = { upsert: true, new: true };
 
-
-  
     return await this.cartModel.findOneAndUpdate(query, update, options);
   }
   

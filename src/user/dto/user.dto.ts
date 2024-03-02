@@ -12,7 +12,7 @@ export class UserDto {
   @IsNotEmpty()
   @Length(4, 30)
   @IsString()
-  userName: string;
+  username: string;
 
   @IsNotEmpty()
   password: string;

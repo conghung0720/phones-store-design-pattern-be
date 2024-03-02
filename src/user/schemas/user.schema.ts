@@ -8,7 +8,7 @@ export class User {
     required: true,
     length: 30,
   })
-  userName: string;
+  username: string;
 
   @Prop({
     required: true,
