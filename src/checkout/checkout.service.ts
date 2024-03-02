@@ -14,17 +14,19 @@ export class CheckoutService {
     private productService: ProductService,
     private cartService: CartService,
     private orderDetailService: OrderdetailService,
-    private emailService: EmailService
+    private emailService: EmailService,
   ) {}
 
   async reviewCheckout(infoCheckout: CheckoutDto) {
-    const { userId, cartId, price_sale, percent_sale, ...historyOrder } = infoCheckout;
+    const { userId, cartId, price_sale, percent_sale, ...historyOrder } =
+      infoCheckout;
     const getUser = await this.userService.findByUserId(userId);
     if (!getUser) throw new ConflictException('Không tìm thấy người dùng');
 
     const findCart = await this.cartService.findCartByUserId(userId);
-    if (!findCart)
+    if (!findCart) {
       throw new ConflictException('Giỏ hàng không tương đồng với người dùng');
+    }
 
     for (let i = 0; i < findCart.items_cart.length; i++) {
       const { idItemAttr, quantity, productId } = findCart.items_cart.at(i);
