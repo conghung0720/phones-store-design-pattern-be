@@ -8,42 +8,42 @@ import { CommentDto } from './dto/comments.dto';
 
 @Controller('product')
 export class ProductController {
-  constructor(private productService: ProductService) {}
+  constructor(private productService: ProductService) { }
 
   @Get('list')
-  async listProduct() {
-    return await this.productService.listPros();
+  async getAll() {
+    return await this.productService.getAll();
   }
 
   @Post()
-  async addProduct(@Body() product: ProductDto) {
+  async create(@Body() product: ProductDto) {
     return this.productService.create(product);
   }
 
   @Get(':id')
-  async getProductById(@Param('id') id: Types.ObjectId) {
-    return this.productService.getProductById({ idProduct: id });
+  async getById(@Param('id') id: Types.ObjectId) {
+    return this.productService.getById({ idProduct: id });
   }
 
   @Post('findSubProduct')
-  async getSubProductById(@Body() product) {
-    return this.productService.getSubProductById({
+  async findSubProductById(@Body() product) {
+    return this.productService.findSubProductById({
       idProduct: product.productId,
       idAttr: product.attrId,
     });
   }
   @Post('delete')
-  async deleteProduct(@Body() product){
-    return await this.productService.deleteProductById({productId: product._id})
+  async delete(@Body() product) {
+    return await this.productService.deleteProductById({ productId: product._id })
   }
 
   @Post('updateProduct')
-  async updateProduct(@Body() product: ProductDto) {
+  async update(@Body() product: ProductDto) {
     return this.productService.editProductById(product);
   }
 
   @Post('comment')
-  async commentProduct(@Body() comment: CommentDto){
+  async comment(@Body() comment: CommentDto) {
     return await this.productService.commentProduct(comment)
   }
 

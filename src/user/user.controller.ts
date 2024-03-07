@@ -9,21 +9,21 @@ import { Types } from 'mongoose';
 
 @Controller('user')
 export class UserController {
-  constructor(private userService: UserService, private tokenService: TokenKeyService) {}
+  constructor(private userService: UserService, private tokenService: TokenKeyService) { }
 
   @Get('profileById/:id')
-  async findUserById(@Param('id') id) {
-    return await this.userService.findByUserId(id);
+  async getById(@Param('id') id) {
+    return await this.userService.getById(id);
   }
 
   @Get('profile')
-  async getProfile(@UserDecorator() user){
-    return await this.userService.findByUserId(new Types.ObjectId(user._id))
+  async findProfile(@UserDecorator() user) {
+    return await this.userService.getById(new Types.ObjectId(user._id))
   }
 
   @Get('')
-  async listUser(){
-    return await this.userService.listUser();
+  async getAll() {
+    return await this.userService.getAll();
   }
 
   @Post('handleRefreshToken')
@@ -35,10 +35,10 @@ export class UserController {
     });
   }
   @Post('')
-  async create(@Body() user: UserDto) {}
+  async create(@Body() user: UserDto) { }
 
   @Post('edit')
-  async edit(@Body() user){
-    return await this.userService.changeProfileUser({user})
+  async edit(@Body() user) {
+    return await this.userService.changeProfileUser({ user })
   }
 }

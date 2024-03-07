@@ -9,15 +9,15 @@ export class OrderHistoryService {
   constructor(
     @InjectModel('orderHistory')
     private orderHistoryModel = Model<OrderHistory>,
-  ) {}
+  ) { }
 
-  async createOrderHistory(orderHistory: OrderHistoryDto) {
+  async create(orderHistory: OrderHistoryDto) {
     const newOrderHistory = await this.orderHistoryModel.create(orderHistory);
     if (!newOrderHistory) throw new BadRequestException('Lỗi tạo mới đơn hàng');
     return newOrderHistory;
   }
 
-  async findOrderHistoryByUserId({ userId }) {
+  async getByUserId({ userId }) {
     return await this.orderHistoryModel.find({ userId: userId.id });
   }
 }

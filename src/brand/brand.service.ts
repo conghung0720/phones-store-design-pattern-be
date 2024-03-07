@@ -7,17 +7,17 @@ import { Model } from 'mongoose';
 export class BrandService {
     constructor(
         @InjectModel(Brand.name) private brandModel: Model<Brand>,
-    ) {}
+    ) { }
 
-    async create({ name}) {
-        return await this.brandModel.create({name});
+    async create({ name }) {
+        return await this.brandModel.create({ name });
     }
 
-    async findAll() {
+    async getAll() {
         return await this.brandModel.find().exec();
     }
-    
-    async findById(id: string) {
+
+    async getById(id: string) {
         return await this.brandModel.findById(id).exec();
     }
 
@@ -28,6 +28,6 @@ export class BrandService {
     async delete(id: string) {
         return await this.brandModel.findByIdAndRemove(id).exec();
     }
-    
-    
+
+
 }

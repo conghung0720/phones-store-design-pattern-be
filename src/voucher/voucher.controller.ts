@@ -4,36 +4,36 @@ import { VoucherDto, VoucherUseDto } from './dto/d';
 
 @Controller('voucher')
 export class VoucherController {
-    constructor(private voucherService: VoucherService) {}
+    constructor(private voucherService: VoucherService) { }
 
     @Post('create')
-    async newVoucher(@Body() voucher) {
+    async create(@Body() voucher) {
         // console.log(voucher);
-        return await this.voucherService.newVoucher(voucher)
+        return await this.voucherService.create(voucher)
     }
 
     @Post('useVoucher')
-    async useVoucher (@Body() voucher: VoucherUseDto) {
+    async useVoucher(@Body() voucher: VoucherUseDto) {
         return await this.voucherService.useVoucher(voucher);
     }
 
     @Get('list')
-    async voucherList () {
-        return await this.voucherService.voucherList()
+    async getAll() {
+        return await this.voucherService.getAll()
     }
 
     @Post('remove')
-    async removeVoucher(@Body() voucher: { voucherId: string} ) {
-        return await this.voucherService.removeVoucherById(voucher.voucherId);
+    async remove(@Body() voucher: { voucherId: string }) {
+        return await this.voucherService.remove(voucher.voucherId);
     }
 
     @Post('edit')
-    async editVoucher(@Body() voucher){
-        return await this.voucherService.editVoucher(voucher);
+    async edit(@Body() voucher) {
+        return await this.voucherService.edit(voucher);
     }
 
     @Post('applyVoucher')
-    async applyVoucher(@Body() voucher){
+    async applyVoucher(@Body() voucher) {
         return await this.voucherService.findVoucherByVoucherName(voucher.voucherName);
     }
 }

@@ -22,12 +22,12 @@ export class AuthMiddleware implements NestMiddleware {
   constructor(
     private userService: UserService,
     private keyStoreService: TokenKeyService,
-  ) {}
+  ) { }
 
   async use(req, res: Response, next: NextFunction) {
     //header: client_id, accessToken, refreshToken
     const userId = req.get(HEADER.CLIENT_ID);
-    const foundUserId = await this.userService.findByUserId(userId);
+    const foundUserId = await this.userService.getById(userId);
     if (!foundUserId) throw new ForbiddenException('Không tìm thấy userId');
 
 
@@ -35,11 +35,11 @@ export class AuthMiddleware implements NestMiddleware {
     if (!keyStore) throw new ForbiddenException('Không tìm thấy keystore');
 
     const refreshToken = req.get(HEADER.REFRESHTOKEN);
-    
+
     if (refreshToken && req.url === "/handleRefreshToken") {
       try {
         const decoded = await jwt.verify(refreshToken, keyStore.publicKey);
-        if(!decoded) throw new ForbiddenException("Invalid JWT")
+        if (!decoded) throw new ForbiddenException("Invalid JWT")
         if (decoded.user._id !== userId)
           throw new ForbiddenException('Lỗi không trùng id');
 
@@ -52,18 +52,18 @@ export class AuthMiddleware implements NestMiddleware {
       }
     }
 
-    try{
+    try {
       const accessToken = req.get(HEADER.AUTHORIZATION);
       const decoded = await jwt.verify(accessToken, keyStore.privateKey)
-      if(!decoded) throw new ForbiddenException('Het han token');
+      if (!decoded) throw new ForbiddenException('Het han token');
       req.user = decoded.user
       return next();
     }
-    catch(error) {
+    catch (error) {
       throw new ForbiddenException('jwt expired')
     }
-    } 
-     
-    
-  
+  }
+
+
+
 }

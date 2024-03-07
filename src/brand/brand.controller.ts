@@ -3,30 +3,30 @@ import { BrandService } from './brand.service';
 
 @Controller('brand')
 export class BrandController {
-    constructor(private brandService: BrandService) {}
+    constructor(private brandService: BrandService) { }
 
     @Post()
-    async newBrand(@Body() brand: { name: string }) {
+    async create(@Body() brand: { name: string }) {
         return await this.brandService.create(brand)
     }
 
     @Get()
-    async findAllBrands() {
-        return await this.brandService.findAll();
+    async getAll() {
+        return await this.brandService.getAll();
     }
 
     @Get(':id')
-    async findBrandById(@Param('id') id: string) {
-        return await this.brandService.findById(id);
+    async getById(@Param('id') id: string) {
+        return await this.brandService.getById(id);
     }
 
     @Put(':id')
-    async updateBrand(@Param('id') id: string, @Body() brand: { name: string }) {
+    async update(@Param('id') id: string, @Body() brand: { name: string }) {
         return await this.brandService.update(id, brand);
     }
 
     @Delete(':id')
-    async deleteBrand(@Param('id') id: string) {
+    async delete(@Param('id') id: string) {
         return await this.brandService.delete(id);
     }
 

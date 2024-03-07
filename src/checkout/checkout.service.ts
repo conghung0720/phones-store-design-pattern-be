@@ -4,7 +4,7 @@ import { UserService } from 'src/user/user.service';
 import { ProductService } from 'src/product/product.service';
 import { CartService } from 'src/cart/cart.service';
 import { OrderHistoryService } from 'src/order-history/order-history.service';
-import { OrderdetailService } from 'src/orderdetail/orderdetail.service';
+import { OrderDetailService } from 'src/orderdetail/orderdetail.service';
 import { EmailService } from 'src/email/email.service';
 
 @Injectable()
@@ -13,14 +13,14 @@ export class CheckoutService {
     private userService: UserService,
     private productService: ProductService,
     private cartService: CartService,
-    private orderDetailService: OrderdetailService,
+    private orderDetailService: OrderDetailService,
     private emailService: EmailService,
-  ) {}
+  ) { }
 
   async reviewCheckout(infoCheckout: CheckoutDto) {
     const { userId, cartId, price_sale, percent_sale, ...historyOrder } =
       infoCheckout;
-    const getUser = await this.userService.findByUserId(userId);
+    const getUser = await this.userService.getById(userId);
     if (!getUser) throw new ConflictException('Không tìm thấy người dùng');
 
     const findCart = await this.cartService.findCartByUserId(userId);
@@ -30,7 +30,7 @@ export class CheckoutService {
 
     for (let i = 0; i < findCart.items_cart.length; i++) {
       const { idItemAttr, quantity, productId } = findCart.items_cart.at(i);
-      const product = await this.productService.getProductById({
+      const product = await this.productService.getById({
         idProduct: productId,
       });
       if (!product)
