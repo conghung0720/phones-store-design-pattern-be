@@ -7,7 +7,7 @@ export const HEADER = {
   REFRESHTOKEN: 'x-rtoken-id',
 };
 
-export enum Status{
+export enum StatusOrderEnum{
   COMPLETED = 1,
   DELIVERING = 2,
   PACKAGING = 3,
