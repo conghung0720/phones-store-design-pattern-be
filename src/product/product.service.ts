@@ -12,6 +12,7 @@ import { NotFoundError } from 'rxjs';
 import { OrderdetailService } from 'src/orderdetail/orderdetail.service';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/schemas/user.schema';
+import { ProductBuilder } from './product.builder';
 
 @Injectable()
 export class ProductService {
@@ -22,18 +23,21 @@ export class ProductService {
   ) {}
 
   async create(product: ProductDto) {
-    const idsAttribute = product.attributes.map((value, index) => {
-      return {
-        id: index,
-        ...value,
-      };
-    });
-    const newItem = await this.productModel.create({
-      ...product,
-      attributes: idsAttribute,
-    });
+    const builder = new ProductBuilder();
+    const builtProduct = builder
+      .setName(product.name)
+      .setQuantitySold(product.quantity_sold)
+      .setDescription(product.description)
+      .setAttributes(product.attributes)
+      .setHighlights(product.highlights)
+      .setMainImage(product.main_image)
+      .setBrand(product.brand)
+      .build();
+  
+    const newItem = await this.productModel.create(builtProduct);
+  
     if (!newItem) throw new ConflictException('Lỗi khi tạo sản phẩm');
-
+  
     return {
       message: 'Tạo mới sản phẩm thành công',
       status: 201,
