@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -12,26 +13,34 @@ import { NotFoundError } from 'rxjs';
 import { OrderdetailService } from 'src/orderdetail/orderdetail.service';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/schemas/user.schema';
+import { ProductBuilder } from './product.builder';
+import { FavoriteProduct } from './schemas/favorite.schema';
+import { NotificationObserver } from 'src/notify/notification.observer';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(FavoriteProduct.name) private favoriteModel: Model<FavoriteProduct>,
     private orderDetailService: OrderdetailService,
-    private userService: UserService
+    private userService: UserService,
+    private notificationService: NotificationObserver
   ) {}
 
   async create(product: ProductDto) {
-    const idsAttribute = product.attributes.map((value, index) => {
-      return {
-        id: index,
-        ...value,
-      };
-    });
-    const newItem = await this.productModel.create({
-      ...product,
-      attributes: idsAttribute,
-    });
+    const builder = new ProductBuilder();
+    const builtProduct = builder
+      .setName(product.name)
+      .setQuantitySold(product.quantity_sold)
+      .setDescription(product.description)
+      .setAttributes(product.attributes)
+      .setHighlights(product.highlights)
+      .setMainImage(product.main_image)
+      .setBrand(product.brand)
+      .build();
+
+    const newItem = await this.productModel.create(builtProduct);
+    await this.createFavorite(String(newItem._id), product.attributes[0].price);
     if (!newItem) throw new ConflictException('Lỗi khi tạo sản phẩm');
 
     return {
@@ -48,8 +57,8 @@ export class ProductService {
     return listItems;
   }
 
-  async deleteProductById({productId}){
-    return await this.productModel.findOneAndDelete({_id: productId});
+  async deleteProductById({ productId }) {
+    return await this.productModel.findOneAndDelete({ _id: productId });
   }
 
   async updateQuantityProduct({ productId, productAttrId, quantityChange }) {
@@ -60,7 +69,7 @@ export class ProductService {
         },
       },
       options = { upsert: true };
-
+      
     return await this.productModel.findOneAndUpdate(query, update, options);
   }
 
@@ -76,13 +85,13 @@ export class ProductService {
   }
 
   async getProductById({ idProduct }) {
-    const foundProduct : any = await this.productModel.findById(idProduct);
+    const foundProduct: any = await this.productModel.findById(idProduct);
     if (!foundProduct) throw new BadGatewayException('Không tìm thấy sản phẩm');
-    const comments : any = foundProduct.comments || [];
+    const comments: any = foundProduct.comments || [];
 
     for (const [index, comment] of comments.entries()) {
-      const user : any  = await this.userService.findByUserId(comment.userId)
-      foundProduct.comments[index].userId = user
+      const user: any = await this.userService.findByUserId(comment.userId);
+      foundProduct.comments[index].userId = user;
     }
     return foundProduct;
   }
@@ -100,30 +109,112 @@ export class ProductService {
     return foundProduct.attributes.find((value) => value.id === idAttr);
   }
 
-  async editProductById(product){
-    const {_id, ...productChange} = product 
-    const foundProduct = await this.productModel.findById(new Types.ObjectId(_id))
-    if(!foundProduct) throw new ConflictException('Không tìm thấy sản phẩm')
-
-    return await this.productModel.updateOne({_id}, productChange)
+  async editProductById(product) {
+    const { _id, ...productChange } = product;
+    const foundProduct = await this.productModel.findById(
+      new Types.ObjectId(_id),
+    );
+    if (!foundProduct) throw new ConflictException('Không tìm thấy sản phẩm');
+    await this.updatePriceFavorite(_id, productChange.price);
+    return await this.productModel.updateOne({ _id }, productChange);
   }
 
-  async commentProduct(product){
-    const foundOrderDetailSuccess = await this.orderDetailService
-    .isOrderDetailSuccess({userId: product.userId, productId: product.productId})
+  async commentProduct(product) {
+    const foundOrderDetailSuccess =
+      await this.orderDetailService.isOrderDetailSuccess({
+        userId: product.userId,
+        productId: product.productId,
+      });
 
-    if(!foundOrderDetailSuccess) throw new ForbiddenException('Bạn không thể đánh giá vì chưa mua sản phẩm')
+    if (!foundOrderDetailSuccess)
+      throw new ForbiddenException(
+        'Bạn không thể đánh giá vì chưa mua sản phẩm',
+      );
 
-    const foundProduct = await this.productModel.find(new Types.ObjectId(product.productId))
-    const foundComment = foundProduct.flatMap(val => val.comments)
+    const foundProduct = await this.productModel.find(
+      new Types.ObjectId(product.productId),
+    );
+    const foundComment = foundProduct.flatMap((val) => val.comments);
 
-    const checkExistComment = foundComment.some((val : any) =>{
-      return val.userId.toString() === product.userId.toString()
+    const checkExistComment = foundComment.some((val: any) => {
+      return val.userId.toString() === product.userId.toString();
     });
 
-    if(checkExistComment) throw new ForbiddenException("Bạn đã bình luận sản phẩm này rồi")
-    
-    const filter = {_id: product.productId}, update = { $push: { comments: {...product, userId: new Types.ObjectId(product.userId)}}}, options = { new: true, upsert: true}
-    return await this.productModel.findByIdAndUpdate(filter, update, options)
+    if (checkExistComment)
+      throw new ForbiddenException('Bạn đã bình luận sản phẩm này rồi');
+
+    const filter = { _id: product.productId },
+      update = {
+        $push: {
+          comments: { ...product, userId: new Types.ObjectId(product.userId) },
+        },
+      },
+      options = { new: true, upsert: true };
+    return await this.productModel.findByIdAndUpdate(filter, update, options);
+  }
+
+  async getFavoriteByProductId(productId: string) {
+    const favorite = await this.favoriteModel.findOne({ productId }).exec();
+    if (!favorite) throw new BadRequestException('Favorite not found');
+    return favorite;
+  }
+
+  async createFavorite(productId: string, price = 0) {
+    const favorite = await this.favoriteModel.create({
+      users_favorited: [],
+      product: new Types.ObjectId(productId),
+      current_price: price,
+      old_price: price,
+    });
+    if (!favorite) throw new BadRequestException('Favorite not created');
+    return favorite;
+  }
+
+  async updateFavorite(productId: string, userId: string) {
+    const favorite = await this.favoriteModel.findOne({ product: new Types.ObjectId(productId) }).exec();
+    if (!favorite) throw new BadRequestException('Favorite not found');
+
+    favorite.users_favorited.push(new Types.ObjectId(userId));
+    return await favorite.save();
+  }
+
+  async updatePriceFavorite(productId: string, newPrice: number) {
+    const favorite = await this.favoriteModel.findOne({ productId }).exec();
+    if (!favorite) throw new BadRequestException('Favorite not found');
+
+    favorite.old_price = favorite.current_price;
+    favorite.current_price = newPrice;
+    return await favorite.save();
+  }
+  async updateUserFavorite(productId: string, userId: string, isFavorite: boolean) {
+    const favorite = await this.favoriteModel.findOne({ product: new Types.ObjectId(productId) }).exec();
+    if (!favorite) throw new BadRequestException('Favorite not found');
+  
+    const userIdObj = new Types.ObjectId(userId);
+    const index = favorite.users_favorited.indexOf(userIdObj);
+  
+    if (isFavorite) {
+      if (index === -1) { 
+        favorite.users_favorited.push(userIdObj);
+      }
+    } else {
+      if (index > -1) { 
+        favorite.users_favorited.splice(index, 1);
+      }
+    }
+  
+    return await favorite.save();
+  }
+
+  async deleteFavorite(productId: string, userId: string) {
+    const favorite = await this.favoriteModel.findOne({ productId }).exec();
+    if (!favorite) throw new BadRequestException('Favorite not found');
+
+    const index = favorite.users_favorited.indexOf(new Types.ObjectId(userId));
+    if (index > -1) {
+      favorite.users_favorited.splice(index, 1);
+    }
+
+    return await favorite.save();
   }
 }
