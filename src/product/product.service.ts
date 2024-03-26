@@ -21,10 +21,11 @@ import { NotificationObserver } from 'src/notify/notification.observer';
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
-    @InjectModel(FavoriteProduct.name) private favoriteModel: Model<FavoriteProduct>,
+    @InjectModel(FavoriteProduct.name)
+    private favoriteModel: Model<FavoriteProduct>,
     private orderDetailService: OrderdetailService,
     private userService: UserService,
-    private notificationService: NotificationObserver
+    private notificationService: NotificationObserver,
   ) {}
 
   async create(product: ProductDto) {
@@ -37,6 +38,7 @@ export class ProductService {
       .setHighlights(product.highlights)
       .setMainImage(product.main_image)
       .setBrand(product.brand)
+      .setDetail(product.detail)
       .build();
 
     const newItem = await this.productModel.create(builtProduct);
@@ -69,7 +71,7 @@ export class ProductService {
         },
       },
       options = { upsert: true };
-      
+
     return await this.productModel.findOneAndUpdate(query, update, options);
   }
 
@@ -115,6 +117,12 @@ export class ProductService {
       new Types.ObjectId(_id),
     );
     if (!foundProduct) throw new ConflictException('Không tìm thấy sản phẩm');
+    if (
+      product?.attributes[0].price &&
+      product.attributes[0].price < foundProduct.attributes[0].price
+    ) {
+      await this.notificationService.notify(product._id);
+    }
     await this.updatePriceFavorite(_id, productChange.price);
     return await this.productModel.updateOne({ _id }, productChange);
   }
@@ -153,6 +161,22 @@ export class ProductService {
     return await this.productModel.findByIdAndUpdate(filter, update, options);
   }
 
+  async checkFavoriteByProductIdAndUserId(
+    productId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const favorite = await this.favoriteModel
+      .findOne({ product: new Types.ObjectId(productId) })
+      .exec();
+    if (!favorite) {
+      return !!favorite;
+    }
+
+    const userIdObj = new Types.ObjectId(userId);
+    const isFavorite = favorite.users_favorited.includes(userIdObj);
+    return isFavorite;
+  }
+
   async getFavoriteByProductId(productId: string) {
     const favorite = await this.favoriteModel.findOne({ productId }).exec();
     if (!favorite) throw new BadRequestException('Favorite not found');
@@ -171,7 +195,9 @@ export class ProductService {
   }
 
   async updateFavorite(productId: string, userId: string) {
-    const favorite = await this.favoriteModel.findOne({ product: new Types.ObjectId(productId) }).exec();
+    const favorite = await this.favoriteModel
+      .findOne({ product: new Types.ObjectId(productId) })
+      .exec();
     if (!favorite) throw new BadRequestException('Favorite not found');
 
     favorite.users_favorited.push(new Types.ObjectId(userId));
@@ -179,30 +205,41 @@ export class ProductService {
   }
 
   async updatePriceFavorite(productId: string, newPrice: number) {
-    const favorite = await this.favoriteModel.findOne({ productId }).exec();
-    if (!favorite) throw new BadRequestException('Favorite not found');
+    const favorite = await this.favoriteModel
+      .findOne({ product: new Types.ObjectId(productId) })
+      .exec();
+    if (!favorite) {
+      return;
+    }
 
     favorite.old_price = favorite.current_price;
     favorite.current_price = newPrice;
     return await favorite.save();
   }
-  async updateUserFavorite(productId: string, userId: string, isFavorite: boolean) {
-    const favorite = await this.favoriteModel.findOne({ product: new Types.ObjectId(productId) }).exec();
+  async updateUserFavorite(
+    productId: string,
+    userId: string,
+    isFavorite: boolean,
+  ) {
+    const favorite = await this.favoriteModel
+      .findOne({ product: new Types.ObjectId(productId) })
+      .exec();
     if (!favorite) throw new BadRequestException('Favorite not found');
-  
+
     const userIdObj = new Types.ObjectId(userId);
     const index = favorite.users_favorited.indexOf(userIdObj);
-  
     if (isFavorite) {
-      if (index === -1) { 
+      if (index === -1) {
+        await this.notificationService.subscribe(userId, productId);
         favorite.users_favorited.push(userIdObj);
       }
     } else {
-      if (index > -1) { 
+      if (index > -1) {
+        await this.notificationService.unSubscribe(userId, productId);
         favorite.users_favorited.splice(index, 1);
       }
     }
-  
+
     return await favorite.save();
   }
 

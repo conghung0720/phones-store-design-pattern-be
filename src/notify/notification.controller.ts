@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Patch } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 
 @Controller('notification')
@@ -15,9 +15,9 @@ export class NotificationController {
     return this.notificationService.findAll();
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<any> {
-    return this.notificationService.findOne(id);
+  @Get('user/:userId')
+  async findByUserId(@Param('userId') userId: string) {
+    return await this.notificationService.findOne(userId);
   }
 
   @Put(':id')
@@ -28,5 +28,15 @@ export class NotificationController {
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<any> {
     return this.notificationService.remove(id);
+  }
+
+  @Post('markAllAsRead/:userId')
+  async markAllAsRead(@Param('userId') userId: string) {
+    return await this.notificationService.markAllAsRead(userId);
+  }
+
+  @Get('count/:userId')
+  async countNotifications(@Param('userId') userId: string) {
+    return await this.notificationService.countSentNotifications(userId)
   }
 }
