@@ -24,7 +24,7 @@ export class ProductService {
     private orderDetailService: OrderdetailService,
     private userService: UserService,
     private notificationService: NotificationObserver,
-  ) {}
+  ) { }
 
   async create(product: ProductDto) {
     const builder = new ProductBuilder();
@@ -37,11 +37,11 @@ export class ProductService {
       .setMainImage(product.main_image)
       .setBrand(product.brand)
       .build();
-  
+
     const newItem = await this.productModel.create(builtProduct);
-  
+
     if (!newItem) throw new ConflictException('Lỗi khi tạo sản phẩm');
-  
+
     return {
       message: 'Tạo mới sản phẩm thành công',
       status: 201,
@@ -252,7 +252,7 @@ export class ProductService {
     return await favorite.save();
   }
 
-  async createV2(product: ProductDto) {
+  async createV2(product: ProductDto): Promise<any> {
     const builder = new ProductBuilder();
     const builtProduct = builder
       .setName(product.name)
@@ -262,12 +262,13 @@ export class ProductService {
       .setHighlights(product.highlights)
       .setMainImage(product.main_image)
       .setBrand(product.brand)
+      .setDescription(product.description)
       .build();
-  
+
     const newItem = await this.productModel.create(builtProduct);
-  
+
     if (!newItem) throw new ConflictException('Lỗi khi tạo sản phẩm');
-  
+
     return {
       message: 'Tạo mới sản phẩm thành công',
       status: 201,
