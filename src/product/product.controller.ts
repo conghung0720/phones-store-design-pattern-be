@@ -47,4 +47,10 @@ export class ProductController {
     return await this.productService.commentProduct(comment)
   }
 
+  @Post('updateUserFavorite')
+  async updateUserFavorite(@Body() data: { productId: string, userId: string, isFavorite: boolean }) {
+    console.log("🚀 ~ ProductController ~ updateUserFavorite ~ data:", data)
+    return await this.productService.updateUserFavorite(data.productId, data.userId, data.isFavorite);
+  }
+
 }
