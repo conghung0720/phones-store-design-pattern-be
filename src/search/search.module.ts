@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 import { Product, ProductSchema } from 'src/product/schemas/product.schema';
@@ -14,6 +15,5 @@ import { DescriptionSearchStrategy } from './strategy/description-search.strateg
   ],
   controllers: [SearchController],
   providers: [SearchService, PriceSearchStrategy, NameSearchStrategy, SearchStrategy, DescriptionSearchStrategy]
-
 })
 export class SearchModule {}

@@ -31,6 +31,16 @@ export class SearchService {
     }
 
     return searchProduct.search(keyword);
-    // return search.search(keyword);
+  ) {}
+  
+  async searchProducts(keyword: string): Promise<Product[]> {
+    return this.productModel
+      .find({
+        $or: [
+          { name: { $regex: keyword, $options: 'i' } },
+          { description: { $regex: keyword, $options: 'i' } },
+        ],
+      })
+      .exec();
   }
 }
