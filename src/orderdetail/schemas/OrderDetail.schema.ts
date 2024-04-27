@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { IsPositive } from 'class-validator';
 import { HydratedDocument, Types } from 'mongoose';
-import { Status } from 'src/constants';
+import { StatusOrderEnum } from 'src/constants';
 
 // export type UserDocument = HydratedDocument<User>;
 
@@ -51,8 +51,8 @@ export class OrderDetail {
 
   @Prop({
     required: true,
-    enum: Status,
-    default: Status.IN_PROGRESS
+    enum: StatusOrderEnum,
+    default: StatusOrderEnum.IN_PROGRESS
   })
   status: number
 
